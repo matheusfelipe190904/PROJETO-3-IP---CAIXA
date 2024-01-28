@@ -116,23 +116,30 @@ void alterarEstoque() {
         printf("Erro ao abrir o arquivo.\n");
         exit(1);
     }
+
     char linha[600];
+
     printf("======================\n");
-    while(fgets(linha, sizeof(linha), arquivo) != NULL) {
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
         printf("%s", linha);
     }
     printf("======================\n");
+
     fclose(arquivo);
+
     int codigo;
     int novaQuantidade;
 
     printf("Informe o codigo do produto (digite 0 para cancelar): ");
     scanf("%d", &codigo);
-    if (codigo == 0) return;
+    if (codigo == 0) {
+        return;
+    }
+
     // Abre o arquivo para leitura e cria um arquivo temporário
     FILE *tempArquivo = fopen("temp_produtos.txt", "w");
-    fopen("produtos.txt", "r");
-    if (tempArquivo == NULL) {
+    arquivo = fopen("produtos.txt", "r");
+    if (tempArquivo == NULL || arquivo == NULL) {
         printf("Erro ao abrir o arquivo.\n");
         exit(1);
     }
@@ -154,7 +161,7 @@ void alterarEstoque() {
             produtoEncontrado = 1;
         }
 
-            // Escreve a linha no arquivo temporário
+        // Escreve a linha no arquivo temporário
         fprintf(tempArquivo, "%s %d %.2lf %d\n", nome, codigoArquivo, preco, quantidade);
     }
 
@@ -171,7 +178,6 @@ void alterarEstoque() {
         remove("temp_produtos.txt");
         return;
     }
-
 }
 
 void excluirRegistro() {
