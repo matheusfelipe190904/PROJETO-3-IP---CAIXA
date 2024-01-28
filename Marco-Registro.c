@@ -74,33 +74,38 @@ void registrarProduto() {
 
     printf("Informe o codigo do produto: ");
     scanf("%d", &novoProduto->codigo);
+    if (novoProduto->codigo == 0) return;
     
     if (verificarProdutoExistente(novoProduto->nome, novoProduto->codigo) == 1) {
         printf("Produto com o mesmo nome ja existe. Registro cancelado.\n");
         free(novoProduto->nome);
         free(novoProduto);
+        fclose(arquivo);
         registrarProduto();
     // Verifica se o produto já existe
     } else if (verificarProdutoExistente(novoProduto->nome, novoProduto->codigo) == 2) {
         printf("Produto com o mesmo codigo ja existe. Registro cancelado.\n");
         free(novoProduto->nome);
         free(novoProduto);
+        fclose(arquivo);
         registrarProduto();
+    } else {
+
+        printf("Informe o preco do produto: ");
+        scanf("%lf", &novoProduto->preco);
+
+        printf("Informe a quantidade em estoque: ");
+        scanf("%d", &novoProduto->quantidade);
+
+        // Salva os dados do novo produto no arquivo
+        fprintf(arquivo, "%s %d %.2lf %d\n", novoProduto->nome, novoProduto->codigo, novoProduto->preco, novoProduto->quantidade);
+
+        // Fecha o arquivo
+        fclose(arquivo);
+
+        printf("Produto registrado com sucesso!\n");
+        return;
     }
-
-    printf("Informe o preco do produto: ");
-    scanf("%lf", &novoProduto->preco);
-
-    printf("Informe a quantidade em estoque: ");
-    scanf("%d", &novoProduto->quantidade);
-
-    // Salva os dados do novo produto no arquivo
-    fprintf(arquivo, "%s %d %.2lf %d\n", novoProduto->nome, novoProduto->codigo, novoProduto->preco, novoProduto->quantidade);
-
-    // Fecha o arquivo
-    fclose(arquivo);
-
-    printf("Produto registrado com sucesso!\n");
         
 }
 
