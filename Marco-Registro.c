@@ -20,24 +20,21 @@ int verificarProdutoExistente(const char *nome, int codigo) {
 
     // Lê cada linha do arquivo
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
-        char nomeArquivo[501];
+        char nomeArquivo[500];
         int codigoArquivo;
 
         // Lê os dados da linha do arquivo
-        if (sscanf(linha, "%s", nomeArquivo) == 1) {
-            // Verifica se o nome ou o código já existem
-            if (strcmp(nomeArquivo, nome) == 0) {
-                fclose(arquivo);
-                return 1; // O nome do produto já existe
-            }
+        sscanf(linha, "%s %d", nomeArquivo, &codigoArquivo);
+        // Verifica se o nome ou o código já existem
+        if (!strcmp(nomeArquivo, nome)) {
+            fclose(arquivo);
+            return 1;
         }
-        if (sscanf(linha, "%d", codigoArquivo) == 1) {
-            // Verifica se o nome ou o código já existem
-            if (codigoArquivo == codigo) {
-                fclose(arquivo);
-                return 2; // O codigo do produto já existe
-            }
+        if (codigoArquivo == codigo) {
+            fclose(arquivo);
+            return 2; // O codigo do produto já existe
         }
+        
     }
 
     fclose(arquivo);
@@ -46,8 +43,17 @@ int verificarProdutoExistente(const char *nome, int codigo) {
 
 void registrarProduto() {
     printf("Opcao 1 selecionada: Registrar Produto\n");
-
     produto *novoProduto = (produto *)malloc(sizeof(produto));
+    FILE *arquivo = fopen("produtos.txt", "a+");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        exit(1);
+    }
+    char linha[600];
+
+    while(fgets(linha, sizeof(linha), arquivo) != NULL) {
+        puts(linha);
+    }
 
     if (novoProduto == NULL) {
         printf("Erro na alocacao de memoria.\n");
@@ -55,7 +61,7 @@ void registrarProduto() {
     }
 
     // Solicita ao usuário os dados do produto
-    printf("Informe o nome do produto: ");
+    printf("Informe o nome do produto (digite 0 para cancelar): ");
 
     // Alocar dinamicamente o tamanho da string do nome
     novoProduto->nome = (char *)malloc(501 * sizeof(char));
@@ -64,17 +70,18 @@ void registrarProduto() {
         exit(1);
     }
 
-    scanf("%[^\n]%*c", novoProduto->nome);
+    scanf("\n%s", novoProduto->nome);
+    if (novoProduto->nome = "0") return;
 
     printf("Informe o codigo do produto: ");
     scanf("%d", &novoProduto->codigo);
     
-    // Verifica se o produto já existe
     if (verificarProdutoExistente(novoProduto->nome, novoProduto->codigo) == 1) {
         printf("Produto com o mesmo nome ja existe. Registro cancelado.\n");
         free(novoProduto->nome);
         free(novoProduto);
         registrarProduto();
+    // Verifica se o produto já existe
     } else if (verificarProdutoExistente(novoProduto->nome, novoProduto->codigo) == 2) {
         printf("Produto com o mesmo codigo ja existe. Registro cancelado.\n");
         free(novoProduto->nome);
@@ -88,13 +95,6 @@ void registrarProduto() {
     printf("Informe a quantidade em estoque: ");
     scanf("%d", &novoProduto->quantidade);
 
-    // Abre o arquivo para adicionar um novo produto
-    FILE *arquivo = fopen("produtos.txt", "a");
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo.\n");
-        exit(1);
-    }
-
     // Salva os dados do novo produto no arquivo
     fprintf(arquivo, "%s %d %.2lf %d\n", novoProduto->nome, novoProduto->codigo, novoProduto->preco, novoProduto->quantidade);
 
@@ -106,20 +106,76 @@ void registrarProduto() {
 }
 
 void alterarEstoque() {
-    // Implemente a lógica para alterar o estoque aqui
     printf("Opcao 2 selecionada: Alterar Estoque\n");
-    printf("AINDA NAO FUNCIONA");
+    FILE *arquivo = fopen("produtos.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        exit(1);
+    }
+    char linha[600];
+    while(fgets(linha, sizeof(linha), arquivo) != NULL) {
+        puts(linha);
+    }
+    int codigo;
+    int novaQuantidade;
+
+    printf("Informe o codigo do produto: ");
+    scanf("%d", &codigo);
+
+    // Abre o arquivo para leitura e cria um arquivo temporário
+    FILE *tempArquivo = fopen("temp_produtos.txt", "w");
+
+    if (tempArquivo == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        exit(1);
+    }
+
+    int produtoEncontrado = 0;
+
+    // Leitura em cada linha do arquivo
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        char nome[501];
+        int codigoArquivo;
+        double preco;
+        int quantidade;
+
+        if (sscanf(linha, "%s %d %lf %d", nome, &codigoArquivo, &preco, &quantidade) == 4) {
+            if (codigoArquivo == codigo) {
+                printf("Informe a nova quantidade em estoque: ");
+                scanf("%d", &novaQuantidade);
+
+                quantidade = novaQuantidade;
+                produtoEncontrado = 1;
+            }
+
+            // Escreve a linha no arquivo temporário
+            fprintf(tempArquivo, "%s %d %.2lf %d\n", nome, codigoArquivo, preco, quantidade);
+        }
+    }
+
+    fclose(arquivo);
+    fclose(tempArquivo);
+
+    // Remove o arquivo antigo e renomeia o temporário
+    remove("produtos.txt");
+    rename("temp_produtos.txt", "produtos.txt");
+
+    if (produtoEncontrado) {
+        printf("Estoque alterado com sucesso!\n");
+    } else {
+        printf("Produto nao encontrado.\n");
+    }
 }
 
 void excluirRegistro() {
     // Implemente a lógica para excluir um registro aqui
-    printf("Opcao 3 selecionada: Excluir Registro\n");
+	printf("Opcao 3 selecionada: Excluir Registro\n");
 	printf("AINDA NAO FUNCIONA");
 }
 
 void processarVenda() {
     // Implemente a lógica para processar uma venda aqui
-    printf("Opcao 4 selecionada: Processar Venda\n");
+	printf("Opcao 4 selecionada: Processar Venda\n");
 	printf("AINDA NAO FUNCIONA");
 }
 
@@ -135,10 +191,8 @@ int main() {
         printf("(4) - PROCESSAR VENDA\n");
         printf("(0) - SAIR\n");
         scanf("%d%*c", &menu);
-        system("clear");
         switch (menu) {
             case 1:
-            	
                 registrarProduto();
                 break;
             case 2:
