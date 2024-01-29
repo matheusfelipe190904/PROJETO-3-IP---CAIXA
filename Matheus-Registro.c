@@ -330,7 +330,7 @@ void processarVenda() {
         } else {
             printf("Produto nao encontrado.\n");
             remove("temp_produtos.txt");
-            break;
+            continue;
         }
     }
     char extra[1];
@@ -394,6 +394,7 @@ int main() {
         printf("(3) - EXCLUIR REGISTRO\n");
         printf("(4) - PROCESSAR VENDA\n");
         printf("(5) - BUSCAR PRODUTO\n");
+        printf("(6) - VER INSTRUCOES DO PROGRAMA\n");
         printf("(0) - SAIR\n");
         scanf("%d%*c", &menu);
         switch (menu) {
