@@ -9,6 +9,15 @@ typedef struct {
     int quantidade;
 } produto;
 
+typedef struct {
+    int codigo;
+    double total;
+} venda;
+
+void salvarVendaNoHistorico(int numeroVenda, produto *produtoVendido, int novaQuantidade, double saldo);
+void mostrarHistoricoVendas();
+produto* buscarProdutoPorCodigo(int codigo);
+
 int verificarProdutoExistente(const char *nome, int codigo) {
     // Abre o arquivo para leitura
     FILE *arquivo = fopen("produtos.txt", "r");
@@ -262,11 +271,13 @@ void excluirRegistro() {
 
 void processarVenda() {
     printf("Opcao 4 selecionada: Processar Venda\n");
+    int numeroVenda = 1;
     double saldo = 0;
+
     while (1) {
         FILE *arquivo = fopen("produtos.txt", "r");
         if (arquivo == NULL) {
-            printf("Erro ao abrir o arquivo.\n");
+            printf("Erro ao abrir o arquivo de produtos.\n");
             exit(1);
         }
         char linha[600];
@@ -289,11 +300,30 @@ void processarVenda() {
             break;
         }
 
+        // Obter informações reais do produto
+        produto *produtoVendido = buscarProdutoPorCodigo(codigo);
+
+        if (produtoVendido != NULL) {
+            printf("Informe quantas unidades serao compradas: ");
+            scanf("%d", &novaQuantidade);
+
+            // Atualizar o estoque e saldo
+            produtoVendido->quantidade -= novaQuantidade;
+            saldo += novaQuantidade * produtoVendido->preco;
+
+            // Salva a venda no histórico com informações reais
+            salvarVendaNoHistorico(numeroVenda, produtoVendido, novaQuantidade, saldo);
+
+            numeroVenda++;
+            free(produtoVendido->nome);
+            free(produtoVendido);
+        }
+
         // Abre o arquivo para leitura e cria um arquivo temporário
         FILE *tempArquivo = fopen("temp_produtos.txt", "w");
         arquivo = fopen("produtos.txt", "r");
         if (tempArquivo == NULL || arquivo == NULL) {
-            printf("Erro ao abrir o arquivo.\n");
+            printf("Erro ao abrir o arquivo de produtos.\n");
             exit(1);
         }
 
@@ -324,6 +354,16 @@ void processarVenda() {
 
         if (produtoEncontrado) {
             printf("Estoque alterado com sucesso!\n");
+
+            // Salva a venda no histórico (fornecendo valores fictícios ou básicos)
+            int codigoProdutoVendido = codigo;
+            const char *nomeProdutoVendido = "Produto";
+            int quantidadeVendida = novaQuantidade;
+            double valorTotal = saldo;
+
+            salvarVendaNoHistorico(numeroVenda, produtoVendido, novaQuantidade, saldo);
+            numeroVenda++;
+
             // Remove o arquivo antigo e renomeia o temporário
             remove("produtos.txt");
             rename("temp_produtos.txt", "produtos.txt");
@@ -336,7 +376,40 @@ void processarVenda() {
     char extra[1];
     printf("Valor total (enter para continuar): %.2lf\n", saldo);
     scanf("\n %[^\n]*s", extra);
-    return;
+
+    // Mostra o histórico de vendas
+    mostrarHistoricoVendas();
+}
+
+void salvarVendaNoHistorico(int numeroVenda, produto *produtoVendido, int novaQuantidade, double saldo) {
+    FILE *historico = fopen("vendas.txt", "a");
+    if (historico == NULL) {
+        printf("Erro ao abrir o arquivo de vendas.\n");
+        exit(1);
+    }
+
+    fprintf(historico, "VENDA %d:\n", numeroVenda);
+    fprintf(historico, "produto: %s - codigo: %d - quantidade: %d - valor: %.2lf\n",
+            produtoVendido->nome, produtoVendido->codigo, novaQuantidade, saldo);
+
+    fclose(historico);
+}
+
+void mostrarHistoricoVendas() {
+    FILE *historico = fopen("vendas.txt", "r");
+    if (historico == NULL) {
+        printf("Erro ao abrir o arquivo de vendas.\n");
+        exit(1);
+    }
+
+    char linha[600];
+    int numeroVenda = 1;
+
+    while (fgets(linha, sizeof(linha), historico) != NULL) {
+        printf("%s", linha);
+    }
+
+    fclose(historico);
 }
 
 produto* buscarProdutoPorCodigo(int codigo) {
@@ -394,7 +467,8 @@ int main() {
         printf("(3) - EXCLUIR REGISTRO\n");
         printf("(4) - PROCESSAR VENDA\n");
         printf("(5) - BUSCAR PRODUTO\n");
-        printf("(6) - VER INSTRUCOES DO PROGRAMA\n");
+        printf("(6) - HISTORICO DE VENDAS\n");
+        printf("(7) - INSTRUCOES\n");
         printf("(0) - SAIR\n");
         scanf("%d%*c", &menu);
         switch (menu) {
@@ -432,7 +506,11 @@ int main() {
     			}
 				break;
 			case 6: 
+				mostrarHistoricoVendas();
+				break;
+			case 7:
 				instrucoes();
+				printf("\n");
 				break;
             case 0:
                 printf("Saindo do programa... Volte sempre!\n");
