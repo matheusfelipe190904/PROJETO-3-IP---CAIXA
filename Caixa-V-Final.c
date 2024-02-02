@@ -261,85 +261,6 @@ void excluirRegistro() {
     printf("Produto Removido!\n");
 }
 
-void processarVenda() {
-    printf("Opcao 4 selecionada: Processar Venda\n");
-    double saldo = 0;
-    while (1) {
-        FILE *arquivo = fopen("produtos.txt", "r");
-        if (arquivo == NULL) {
-            printf("Erro ao abrir o arquivo.\n");
-            exit(1);
-        }
-        char linha[600];
-
-        printf("======================\n");
-        printf("#PRODUTO: #CODIGO: #VALOR: #ESTOQUE:\n");
-        while (fgets(linha, sizeof(linha), arquivo) != NULL) {
-            printf("%s", linha);
-        }
-        printf("======================\n");
-
-        fclose(arquivo);
-
-        int codigo;
-        int novaQuantidade;
-
-        printf("Informe o codigo do produto (digite 0 para finalizar): ");
-        scanf("%d", &codigo);
-        if (codigo == 0) {
-            break;
-        }
-
-        // Abre o arquivo para leitura e cria um arquivo temporário
-        FILE *tempArquivo = fopen("temp_produtos.txt", "w");
-        arquivo = fopen("produtos.txt", "r");
-        if (tempArquivo == NULL || arquivo == NULL) {
-            printf("Erro ao abrir o arquivo.\n");
-            exit(1);
-        }
-
-        int produtoEncontrado = 0;
-
-        // Leitura em cada linha do arquivo
-        while (fgets(linha, sizeof(linha), arquivo) != NULL) {
-            char nome[501];
-            int codigoArquivo;
-            double preco;
-            int quantidade;
-
-            sscanf(linha, "%s %d %lf %d", nome, &codigoArquivo, &preco, &quantidade);
-            if (codigoArquivo == codigo) {
-                printf("Informe quantas unidades seram compradas: ");
-                scanf("%d", &novaQuantidade);
-                quantidade -= novaQuantidade;
-                saldo += novaQuantidade * preco;
-                produtoEncontrado = 1;
-            }
-
-            // Escreve a linha no arquivo temporário
-            fprintf(tempArquivo, "%s %d %.2lf %d\n", nome, codigoArquivo, preco, quantidade);
-        }
-
-        fclose(arquivo);
-        fclose(tempArquivo);
-
-        if (produtoEncontrado) {
-            printf("Estoque alterado com sucesso!\n");
-            // Remove o arquivo antigo e renomeia o temporário
-            remove("produtos.txt");
-            rename("temp_produtos.txt", "produtos.txt");
-        } else {
-            printf("Produto nao encontrado.\n");
-            remove("temp_produtos.txt");
-            break;
-        }
-    }
-    char extra[1];
-    printf("Valor total (enter para continuar): %.2lf\n", saldo);
-    scanf("\n %[^\n]*s", extra);
-    return;
-}
-
 produto* buscarProdutoPorCodigo(int codigo) {
     FILE *arquivo = fopen("produtos.txt", "r");
     if (arquivo == NULL) {
@@ -374,6 +295,98 @@ produto* buscarProdutoPorCodigo(int codigo) {
     fclose(arquivo);
     return NULL; // Produto não encontrado
 }
+
+void processarVenda() {
+    printf("Opcao 4 selecionada: Processar Venda\n");
+    double saldo = 0;
+    while (1) {
+        FILE *arquivo = fopen("produtos.txt", "r");
+        if (arquivo == NULL) {
+            printf("Erro ao abrir o arquivo.\n");
+            exit(1);
+        }
+        char linha[600];
+
+        printf("======================\n");
+        printf("#PRODUTO: #CODIGO: #VALOR: #ESTOQUE:\n");
+        while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+            printf("%s", linha);
+        }
+        printf("======================\n");
+
+        fclose(arquivo);
+
+        int codigo;
+        int novaQuantidade;
+
+        printf("Informe o codigo do produto (digite 0 para finalizar): ");
+        scanf("%d", &codigo);
+        if (codigo == 0) {
+            break;
+        }
+
+        // Buscar o produto pelo código
+        produto *produtoVenda = buscarProdutoPorCodigo(codigo);
+
+        if (produtoVenda == NULL) {
+            printf("Produto nao encontrado.\n");
+            break;
+        }
+
+        // Verificar se há estoque suficiente
+        printf("Informe quantas unidades serao compradas: ");
+        scanf("%d", &novaQuantidade);
+
+        if (novaQuantidade > produtoVenda->quantidade) {
+            printf("Estoque insuficiente para a venda.\n");
+            free(produtoVenda->nome);
+            free(produtoVenda);
+            break;
+        }
+
+        // Atualizar quantidade no produto e calcular saldo
+        produtoVenda->quantidade -= novaQuantidade;
+        saldo += novaQuantidade * produtoVenda->preco;
+
+        // Abrir o arquivo para leitura e criar um arquivo temporário
+        FILE *tempArquivo = fopen("temp_produtos.txt", "w");
+        arquivo = fopen("produtos.txt", "r");
+        if (tempArquivo == NULL || arquivo == NULL) {
+            printf("Erro ao abrir o arquivo.\n");
+            exit(1);
+        }
+
+        // Escrever as informações atualizadas no arquivo temporário
+        while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+            int codigoArquivo;
+            sscanf(linha, "%*s %d", &codigoArquivo);
+
+            if (codigoArquivo == codigo) {
+                fprintf(tempArquivo, "%s %d %.2lf %d\n", produtoVenda->nome, produtoVenda->codigo, produtoVenda->preco, produtoVenda->quantidade);
+            } else {
+                fprintf(tempArquivo, "%s", linha);
+            }
+        }
+
+        fclose(arquivo);
+        fclose(tempArquivo);
+
+        // Remover o arquivo antigo e renomear o temporário
+        remove("produtos.txt");
+        rename("temp_produtos.txt", "produtos.txt");
+
+        // Liberar memória alocada para o produto
+        free(produtoVenda->nome);
+        free(produtoVenda);
+
+        printf("Venda realizada com sucesso!\n");
+    }
+    char extra[1];
+    printf("Valor total (enter para continuar): %.2lf\n", saldo);
+    scanf("\n %[^\n]*s", extra);
+    return;
+}
+
 
 void instrucoes() {
 	printf("Com esse programa voce pode registrar seus produtos, controlar seu estoque e realizar vendas\n");
