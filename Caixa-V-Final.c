@@ -382,7 +382,7 @@ void processarVenda() {
         printf("Venda realizada com sucesso!\n");
     }
     char extra[1];
-    printf("Valor total (enter para continuar): %.2lf\n", saldo);
+    printf("Valor total (aperte 0 e enter para continuar): %.2lf\n", saldo);
     scanf("\n %[^\n]*s", extra);
     return;
 }
